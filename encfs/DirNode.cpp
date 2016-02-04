@@ -183,8 +183,8 @@ bool RenameOp::apply() {
       rDebug("renaming %s -> %s", last->oldCName.c_str(),
              last->newCName.c_str());
 
-      struct stat st;
-      bool preserve_mtime = unix::stat(last->oldCName.c_str(), &st) == 0;
+	  stat_st st;
+	  bool preserve_mtime = unix::stat(last->oldCName.c_str(), &st) == 0;
 
       // internal node rename..
       dn->renameNode(last->oldPName.c_str(), last->newPName.c_str());
@@ -199,8 +199,8 @@ bool RenameOp::apply() {
 
       if (preserve_mtime) {
         struct utimbuf ut;
-        ut.actime = st.st_atime;
-        ut.modtime = st.st_mtime;
+		ut.actime = st.st_atim.tv_sec;
+		ut.modtime = st.st_mtim.tv_sec;
         unix::utime(last->newCName.c_str(), &ut);
       }
 
@@ -555,7 +555,7 @@ int DirNode::rename(const char *fromPlaintext, const char *toPlaintext) {
 
   int res = 0;
   try {
-    struct stat st;
+	struct stat64_cygwin st;
     bool preserve_mtime = unix::stat(fromCName.c_str(), &st) == 0;
 
     renameNode(fromPlaintext, toPlaintext);
@@ -569,8 +569,8 @@ int DirNode::rename(const char *fromPlaintext, const char *toPlaintext) {
       if (renameOp) renameOp->undo();
     } else if (preserve_mtime) {
       struct utimbuf ut;
-      ut.actime = st.st_atime;
-      ut.modtime = st.st_mtime;
+      ut.actime = st.st_atim.tv_sec;
+	  ut.modtime = st.st_mtim.tv_sec;
       unix::utime(toCName.c_str(), &ut);
     }
   } catch (...) {

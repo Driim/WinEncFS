@@ -20,7 +20,212 @@
 #include <boost/scoped_array.hpp>
 #include "rlog/rlog.h"
 
-time_t filetimeToUnixTime(const FILETIME *ft);
+/* copy this from dokanfuse utils.h, because they are no longer available */
+typedef unsigned int ICONV_CHAR;
+#define GET_A2(p) (*((unsigned short*)(p)))
+#define PUT_A2(buf, c) do { *((unsigned short*)(buf)) = (c); } while(0)
+
+static const unsigned char utf8_lengths[256] = {
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 0, 0,
+};
+
+static const unsigned char utf8_masks[7] = {
+	0, 0x7f, 0x1f, 0x0f, 0x07, 0x03, 0x01
+};
+
+bool is_filetime_set(const FILETIME *ft)
+{
+	if (ft == 0 || (ft->dwHighDateTime == 0 && ft->dwLowDateTime == 0))
+		return false;
+	return true;
+}
+
+time_t filetimeToUnixTime(const FILETIME *ft)
+{
+	if (!is_filetime_set(ft)) return 0;
+
+	ULONGLONG ll = { 0 };
+	ll = (ULONGLONG(ft->dwHighDateTime) << 32) + ft->dwLowDateTime;
+	return time_t((ll - 116444736000000000LL) / 10000000LL);
+}
+
+static size_t get_utf8(const unsigned char *p, size_t len, ICONV_CHAR *out)
+{
+	ICONV_CHAR uc;
+	size_t l;
+
+	l = utf8_lengths[p[0]];
+	if (unlikely(l == 0))
+		return -EILSEQ;
+	if (unlikely(len < l))
+		return -EINVAL;
+
+	len = l;
+	uc = *p++ & utf8_masks[l];
+	while (--l)
+		uc = (uc << 6) | (*p++ & 0x3f);
+	*out = uc;
+	return len;
+}
+
+static size_t put_utf8(unsigned char *buf, ICONV_CHAR c)
+{
+#define MASK(n) ((0xffffffffu << (n)) & 0xffffffffu)
+	size_t o_len;
+	unsigned mask;
+
+	if ((c & MASK(7)) == 0) {
+		*buf = (unsigned char)c;
+		return 1;
+	}
+
+	o_len = 2;
+	for (;;) {
+		if ((c & MASK(11)) == 0)
+			break;
+		++o_len;
+		if ((c & MASK(16)) == 0)
+			break;
+		++o_len;
+		if ((c & MASK(21)) == 0)
+			break;
+		++o_len;
+		if ((c & MASK(26)) == 0)
+			break;
+		++o_len;
+		if ((c & MASK(31)) != 0)
+			return -EINVAL;
+	}
+
+	buf += o_len;
+	mask = 0xff80;
+	for (;;) {
+		*--buf = 0x80 | (c & 0x3f);
+		c >>= 6;
+		mask >>= 1;
+		if (c < 0x40) {
+			*--buf = mask | c;
+			break;
+		}
+	}
+	return o_len;
+}
+
+static size_t get_utf16(const unsigned char *p, size_t len, ICONV_CHAR *out)
+{
+	ICONV_CHAR c, c2;
+
+	if (len < 2)
+		return -EINVAL;
+	c = GET_A2(p);
+	if ((c & 0xfc00) == 0xd800 && len >= 4) {
+		c2 = GET_A2(p + 2);
+		if ((c2 & 0xfc00) == 0xdc00) {
+			*out = (c << 10) + c2 - ((0xd800 << 10) + 0xdc00 - 0x10000);
+			return 4;
+		}
+	}
+	*out = c;
+	return 2;
+}
+
+static size_t put_utf16(unsigned char *buf, ICONV_CHAR c)
+{
+	if (c >= 0x110000u)
+		return -EILSEQ;
+	if (c < 0x10000u) {
+		PUT_A2(buf, c);
+		return 2;
+	}
+	c -= 0x10000u;
+	PUT_A2(buf, 0xd800 + (c >> 10));
+	PUT_A2(buf + 2, 0xdc00 + (c & 0x3ffu));
+	return 4;
+}
+
+typedef size_t(*get_conver_t)(const unsigned char *p, size_t len, ICONV_CHAR *out);
+typedef size_t(*put_convert_t)(unsigned char *buf, ICONV_CHAR c);
+
+static size_t convert_char(get_conver_t get_func, put_convert_t put_func, const void *src, size_t src_len, void *dest)
+{
+	size_t il = src_len;
+	const unsigned char* ib = (const unsigned char*)src;
+	unsigned char* ob = (unsigned char*)dest;
+	size_t total = 0;
+
+	while (il) {
+		ICONV_CHAR out_c;
+		size_t readed = get_func(ib, il, &out_c);
+		if (unlikely(readed < 0))
+			return -1;
+		il -= readed;
+		ib += readed;
+
+		unsigned char dummy[8];
+		size_t written = put_func(ob ? ob : dummy, out_c);
+		if (unlikely(written < 0))
+			return -1;
+
+		if (ob)
+			ob += written;
+		total += written;
+	}
+	return total;
+}
+
+static char* wchar_to_utf8(const wchar_t* str)
+{
+	if (str == NULL)
+		return NULL;
+
+	//Determine required length
+	size_t ln = convert_char(get_utf16, put_utf8, str, (wcslen(str) + 1)*sizeof(wchar_t), NULL);
+	if (ln <= 0) return NULL;
+	char *res = (char *)malloc(sizeof(char)*ln);
+	if (res == NULL)
+		return NULL;
+
+	//Convert to Unicode
+	convert_char(get_utf16, put_utf8, str, (wcslen(str) + 1)*sizeof(wchar_t), res);
+	return res;
+}
+
+
+void utf8_to_wchar_buf(const char *src, wchar_t *res, int maxlen)
+{
+	if (res == NULL || maxlen == 0) return;
+
+	size_t ln = convert_char(get_utf8, put_utf16, src, strlen(src) + 1, NULL);/* | raise_w32_error()*/;
+	if (ln <= 0 || ln / sizeof(wchar_t) > (size_t)maxlen)
+	{
+		*res = L'\0';
+		return;
+	}
+	convert_char(get_utf8, put_utf16, src, strlen(src) + 1, res);/* | raise_w32_error()*/;
+}
+
+std::string wchar_to_utf8_cstr(const wchar_t *str)
+{
+	char *utf = wchar_to_utf8(str);
+	std::string res(utf);
+	free(utf);
+	return res;
+}
 
 void pthread_mutex_init(pthread_mutex_t *mtx, int )
 {
@@ -120,7 +325,7 @@ static int truncate_handle(HANDLE fd, __int64 length)
 	LONG high = length >> 32;
 	if (!SetFilePointer(fd, (LONG) length, &high, FILE_BEGIN)
 	    || !SetEndOfFile(fd) ) {
-		int save_errno = win32_error_to_errno(GetLastError());
+		int save_errno = ntstatus_error_to_errno(GetLastError());
 		errno = save_errno;
 		return -1;
 	}
@@ -144,7 +349,7 @@ int unix::truncate(const char *path, __int64 length)
 		fd = CreateFileW(fn.c_str(), GENERIC_WRITE|GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
 
 	if (fd == INVALID_HANDLE_VALUE) {
-		errno = win32_error_to_errno(GetLastError());
+		errno = ntstatus_error_to_errno(GetLastError());
 		return -1;
 	}
 
@@ -329,7 +534,7 @@ unix::utimes(const char *filename, const struct timeval times[2])
 	if (h == INVALID_HANDLE_VALUE)
 		h = CreateFileW(fn.c_str(), FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING, 0, NULL);
 	if (h == INVALID_HANDLE_VALUE) {
-		errno = win32_error_to_errno(GetLastError());
+		errno = ntstatus_error_to_errno(GetLastError());
 		return -1;
 	}
 	FILETIME fta = timevalToFiletime(times[0]);
@@ -338,7 +543,7 @@ unix::utimes(const char *filename, const struct timeval times[2])
 	DWORD win_err = GetLastError();
 	CloseHandle(h);
 	if (!res) {
-		errno = win32_error_to_errno(win_err);
+		errno = ntstatus_error_to_errno(win_err);
 		return -1;
 	}
 	return 0;
@@ -359,7 +564,7 @@ unix::statvfs(const char *path, struct statvfs *fs)
 
 	ULARGE_INTEGER avail, free_bytes, bytes;
 	if (!GetDiskFreeSpaceExA(path, &avail, &bytes, &free_bytes)) {
-		errno = win32_error_to_errno(GetLastError());
+		errno = ntstatus_error_to_errno(GetLastError());
 		return -1;
 	}
 
@@ -385,7 +590,7 @@ my_open(const char *fn_utf8, int flags)
 	std::wstring fn = utf8_to_wfn(fn_utf8);
 	HANDLE f = CreateFileW(fn.c_str(), flags == O_RDONLY ? GENERIC_READ : GENERIC_WRITE|GENERIC_READ, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 	if (f == INVALID_HANDLE_VALUE) {
-		int save_errno = win32_error_to_errno(GetLastError());
+		int save_errno = ntstatus_error_to_errno(GetLastError());
 		f = CreateFileW(fn.c_str(), flags == O_RDONLY ? GENERIC_READ : GENERIC_WRITE|GENERIC_READ, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 		if (f == INVALID_HANDLE_VALUE) {
 			errno = save_errno;
@@ -438,7 +643,7 @@ unix::mkdir(const char *fn, int mode)
 	rDebug("NOTIFY -- unix::mkdir");
 	if (CreateDirectoryW(utf8_to_wfn(fn).c_str(), NULL))
 		return 0;
-	errno = win32_error_to_errno(GetLastError());
+	errno = ntstatus_error_to_errno(GetLastError());
 	return -1;
 }
 
@@ -448,7 +653,7 @@ unix::rename(const char *oldpath, const char *newpath)
 	rDebug("NOTIFY -- unix::rename");
 	if (MoveFileW(utf8_to_wfn(oldpath).c_str(), utf8_to_wfn(newpath).c_str()))
 		return 0;
-	errno = win32_error_to_errno(GetLastError());
+	errno = ntstatus_error_to_errno(GetLastError());
 	return -1;
 }
 
@@ -458,7 +663,7 @@ unix::unlink(const char *path)
 	rDebug("NOTIFY -- unix::unlink");
 	if (DeleteFileW(utf8_to_wfn(path).c_str()))
 		return 0;
-	errno = win32_error_to_errno(GetLastError());
+	errno = ntstatus_error_to_errno(GetLastError());
 	return -1;
 }
 
@@ -468,12 +673,12 @@ unix::rmdir(const char *path)
 	rDebug("NOTIFY -- unix::rmdir");
 	if (RemoveDirectoryW(utf8_to_wfn(path).c_str()))
 		return 0;
-	errno = win32_error_to_errno(GetLastError());
+	errno = ntstatus_error_to_errno(GetLastError());
 	return -1;
 }
 
 int
-unix::stat(const char *path, struct _stati64 *buffer)
+unix::stat(const char *path, struct stat64_cygwin *buffer)
 {
 	rDebug("NOTIFY -- unix::stat");
 	std::wstring fn = utf8_to_wfn(path).c_str();
@@ -487,7 +692,7 @@ unix::stat(const char *path, struct _stati64 *buffer)
 	WIN32_FIND_DATAW wfd;
 	HANDLE hff = FindFirstFileW(fn.c_str(), &wfd);
 	if (hff == INVALID_HANDLE_VALUE) {
-		errno = win32_error_to_errno(GetLastError());
+		errno = ntstatus_error_to_errno(GetLastError());
 		return -1;
 	}
 	FindClose(hff);
@@ -514,9 +719,9 @@ unix::stat(const char *path, struct _stati64 *buffer)
 	buffer->st_uid = 0;
 	buffer->st_gid = 0;
 	buffer->st_size = wfd.nFileSizeHigh * (((uint64_t)1)<<32) + wfd.nFileSizeLow;
-	buffer->st_atime = filetimeToUnixTime(&wfd.ftLastAccessTime);
-	buffer->st_mtime = filetimeToUnixTime(&wfd.ftLastWriteTime);
-	buffer->st_ctime = filetimeToUnixTime(&wfd.ftCreationTime);
+	buffer->st_atim.tv_sec = filetimeToUnixTime(&wfd.ftLastAccessTime);
+	buffer->st_ctim.tv_sec = filetimeToUnixTime(&wfd.ftLastWriteTime);
+	buffer->st_mtim.tv_sec = filetimeToUnixTime(&wfd.ftCreationTime);
 
 	return 0;
 }
@@ -553,7 +758,7 @@ unix::opendir(const char *name)
 		path += L"\\*";
 	dir->hff = FindFirstFileW(path.c_str(), &dir->wfd);
 	if (dir->hff == INVALID_HANDLE_VALUE) {
-		errno = win32_error_to_errno(GetLastError());
+		errno = ntstatus_error_to_errno(GetLastError());
 		free(dir);
 		return NULL;
 	}
@@ -571,9 +776,6 @@ unix::closedir(unix::DIR* dir)
 	return 0;
 }
 
-void utf8_to_wchar_buf(const char *src, wchar_t *res, int maxlen);
-std::string wchar_to_utf8_cstr(const wchar_t *str);
-
 struct unix::dirent*
 unix::readdir(unix::DIR* dir)
 {
@@ -585,7 +787,7 @@ unix::readdir(unix::DIR* dir)
 	if (dir->pos == 0) {
 		++dir->pos;
 	} else if (!FindNextFileW(dir->hff, &dir->wfd)) {
-		errno = GetLastError() == ERROR_NO_MORE_FILES ? 0 : win32_error_to_errno(GetLastError());
+		errno = GetLastError() == ERROR_NO_MORE_FILES ? 0 : ntstatus_error_to_errno(GetLastError());
 		return NULL;
 	}
 	std::string path = wchar_to_utf8_cstr(dir->wfd.cFileName);

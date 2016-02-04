@@ -20,6 +20,7 @@
 
 #include "ConfigReader.h"
 
+#include "fuse.h"
 #include <fcntl.h>
 #include "rlog/rlog.h"
 #include <sys/stat.h>

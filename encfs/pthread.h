@@ -9,7 +9,9 @@
 #include <sys/utime.h>
 #include <string>
 
-#define stat _stati64
+#define stat stat64_cygwin
+/* Strange but without it VS show error */
+typedef struct stat stat_st;
 
 typedef HANDLE pthread_t;
 typedef CRITICAL_SECTION pthread_mutex_t;
@@ -48,8 +50,8 @@ int mkdir(const char *fn, int mode);
 int rename(const char *oldpath, const char *newpath);
 int unlink(const char *path);
 int rmdir(const char *path);
-int stat(const char *path, struct _stati64 *buffer);
-static inline int lstat(const char *path, struct _stati64 *buffer) {
+int stat(const char *path, stat_st *buffer);
+static inline int lstat(const char *path, stat_st *buffer) {
 	return unix::stat(path, buffer);
 }
 int chmod (const char*, int);

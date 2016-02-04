@@ -781,7 +781,7 @@ static int encfs_win_set_attributes(const char *fn, uint32_t attr)
    std::wstring path = utf8_to_wfn(FSRoot->cipherPath(fn));
    if (SetFileAttributesW(path.c_str(), attr))
         return 0;
-   return -win32_error_to_errno(GetLastError());
+   return -ntstatus_error_to_errno(GetLastError());
 }
 
 static int _do_win_set_times(FileNode *fnode, const FILETIME *create, const FILETIME *access, const FILETIME *modified)
@@ -795,7 +795,7 @@ static int _do_win_set_times(FileNode *fnode, const FILETIME *create, const FILE
     {
 	if (SetFileTime((HANDLE)_get_osfhandle(res), create, access, modified))
 	    return 0;
-	res = -win32_error_to_errno(GetLastError());
+	res = -ntstatus_error_to_errno(GetLastError());
     }
 
     return res;
@@ -814,14 +814,14 @@ static int encfs_win_set_times(const char *path, struct fuse_file_info *fi, cons
 
 	HANDLE f = CreateFileW(fn.c_str(), FILE_WRITE_ATTRIBUTES, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 	if (f == INVALID_HANDLE_VALUE)
-	    return -win32_error_to_errno(GetLastError());
+		return -ntstatus_error_to_errno(GetLastError());
 
  	if (SetFileTime(f, create, access, modified))
 	{
 	    CloseHandle(f);
 	    return 0;
 	}
-	res = -win32_error_to_errno(GetLastError());
+	res = -ntstatus_error_to_errno(GetLastError());
 	CloseHandle(f);
 	return res;
     }
