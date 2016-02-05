@@ -213,7 +213,7 @@ string rlog::_format_msg( const char *format, ... )
     va_list args;
     va_start( args, format );
 
-    int ncpy = vsnprintf( msgBuf, sizeof(msgBuf), format, args );
+	int ncpy = vsnprintf_s(msgBuf, _countof(msgBuf), _TRUNCATE, format, args);
 
     va_end( args );
 
@@ -231,7 +231,7 @@ string rlog::_format_msg( const char *format, ... )
 	char *buf = new char[len];
 	
 	va_start( args, format );
-	vsnprintf( buf, len, format, args );
+	vsnprintf_s(buf, len, _TRUNCATE, format, args);
 	va_end( args );
 
 	result = buf;

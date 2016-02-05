@@ -163,43 +163,47 @@ StdioNode::publish( const RLogData &data )
 #ifdef HAVE_LOCALTIME_R
     localtime_r( &errTime, &currentTime );
 #else
-    currentTime = *localtime( &errTime );
+	errno_t err = localtime_s(&currentTime, &errTime);
+	if (err != 0) {
+		/* TODO: error handling */
+		return;
+	}
 #endif
 
     const char *color = NULL;
     if(colorize)
     {
-	sprintf(timeStamp, "%s%02i:%02i:%02i%s ",
-		kGreenColor,
-		currentTime.tm_hour,
-		currentTime.tm_min,
-		currentTime.tm_sec,
-		kNormalColor);
+		sprintf_s(timeStamp, 32, "%s%02i:%02i:%02i%s ",
+			kGreenColor,
+			currentTime.tm_hour,
+			currentTime.tm_min,
+			currentTime.tm_sec,
+			kNormalColor);
     
-	string channel = data.publisher->channel->name();
-	LogLevel level = data.publisher->channel->logLevel();
+		string channel = data.publisher->channel->name();
+		LogLevel level = data.publisher->channel->logLevel();
 
-	switch(level)
-	{
-	case Log_Critical:
-	case Log_Error:
-	    color = kRedColor;
-	    break;
-	case Log_Warning:
-	    color = kYellowColor;
-	    break;
-	case Log_Notice:
-	case Log_Info:
-	case Log_Debug:
-	case Log_Undef:
-	    break;
-	}
+		switch(level)
+		{
+		case Log_Critical:
+		case Log_Error:
+			color = kRedColor;
+		   break;
+		case Log_Warning:
+			color = kYellowColor;
+		    break;
+		case Log_Notice:
+		case Log_Info:
+		case Log_Debug:
+		case Log_Undef:
+		    break;
+		}
     } else
     {
-	sprintf(timeStamp, "%02i:%02i:%02i ",
-		currentTime.tm_hour,
-		currentTime.tm_min,
-		currentTime.tm_sec);
+		sprintf_s(timeStamp, 32, "%02i:%02i:%02i ",
+			currentTime.tm_hour,
+			currentTime.tm_min,
+			currentTime.tm_sec);
     }
 
 #ifdef USE_STRSTREAM

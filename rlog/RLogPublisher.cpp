@@ -137,7 +137,7 @@ void RLogPublisher::PublishVA( PublishLoc *loc, RLogChannel *,
 
     char msgBuf[64];
     char *buf = msgBuf;
-    size_t bufSize = sizeof(msgBuf);
+	size_t bufSize = _countof(msgBuf);
 
     // loop until we have allocated enough space for the message
     for(int numTries = 10; numTries; --numTries)
@@ -157,7 +157,7 @@ void RLogPublisher::PublishVA( PublishLoc *loc, RLogChannel *,
 	memcpy( &args, &ap, sizeof(va_list) );
 #endif
 
-	int ncpy = vsnprintf( buf , bufSize, format, args );
+	int ncpy = vsnprintf_s(buf, bufSize, _TRUNCATE, format, args);
 	va_end( args );
 
 	// if it worked, then return the buffer
