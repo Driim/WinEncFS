@@ -22,16 +22,17 @@
 
 #include "fuse.h"
 #include <fcntl.h>
-#include "rlog/rlog.h"
+#include <rlog/rlog.h>
 #include <sys/stat.h>
-#include "unistd.h"
+#include <unistd.h>
 #include <cstring>
 #include <utility>
-#include "pthread.h"
+#include <pthread.h>
 
 #include "ConfigVar.h"
 
 using namespace std;
+using namespace rlog;
 
 ConfigReader::ConfigReader() {}
 

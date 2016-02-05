@@ -20,6 +20,8 @@
 
 #include "BlockNameIO.h"
 
+#include <rlog/rlog.h>
+#include <rlog/Error.h>
 #include <cstring>
 
 #include "Cipher.h"
@@ -28,11 +30,14 @@
 #include "base64.h"
 #include "intl/gettext.h"
 
-#include "rlog/rlog.h"
-#include "rlog/Error.h"
+namespace rlog {
+	class RLogChannel;
+}
 
 using namespace rlog;
 using namespace rel;
+
+static RLogChannel *Info = DEF_CHANNEL("info/nameio", Log_Info);
 
 static shared_ptr<NameIO> NewBlockNameIO(const Interface &iface,
                                          const shared_ptr<Cipher> &cipher,

@@ -32,11 +32,13 @@
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_free.hpp>
 #include <fcntl.h>
-#include "rlog/rlog.h"
+#include <rlog/Error.h>
+#include <rlog/rlog.h>
+/* FIXME: create empty file in Win dir */
 //#include <sys/socket.h>
 #include <sys/stat.h>
 //#include <sys/wait.h>
-#include "unistd.h"
+#include <unistd.h>
 #include <cctype>
 #include <cerrno>
 #include <cstdio>
@@ -72,6 +74,7 @@
 #define RLOG_SECTION
 
 using namespace rel;
+using namespace rlog;
 using namespace std;
 using gnu::autosprintf;
 namespace fs = boost::filesystem;
@@ -342,8 +345,8 @@ ConfigType readConfig_load(ConfigInfo *nm, const char *path,
         config->cfgType = nm->type;
         return nm->type;
       }
-    }
-    catch (...) {
+    } catch (rlog::Error &err) {
+	  err.log(_RLWarningChannel);
     }
 
     rError(_("Found config file %s, but failed to load - exiting"), path);
@@ -453,8 +456,8 @@ bool readV5Config(const char *configFile, const shared_ptr<EncFSConfig> &config,
       config->blockMACRandBytes = cfgRdr["blockMACRandBytes"].readInt(0);
 
       ok = true;
-    }
-    catch (...) {
+	} catch (rlog::Error &err) {
+	  err.log(_RLWarningChannel);
       rDebug("Error parsing data in config file %s", configFile);
       ok = false;
     }
@@ -519,8 +522,8 @@ bool saveConfig(ConfigType type, const string &rootDir,
 
       try {
         ok = (*nm->saveFunc)(path.c_str(), config);
-      }
-      catch (...) {
+      } catch (rlog::Error &err) {
+		err.log(_RLWarningChannel);
         ok = false;
       }
       break;
@@ -976,7 +979,7 @@ RootPtr createV6Config(EncFS_Context *ctx, const shared_ptr<EncFS_Opts> &opts) {
     if (annotate) cerr << "$PROMPT$ config_option" << endl;
 
     char *res = fgets(answer, sizeof(answer), stdin);
-    //(void)res;
+    (void)res;
     cout << "\n";
   }
 

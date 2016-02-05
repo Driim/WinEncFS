@@ -20,8 +20,8 @@
 
 #include "StreamNameIO.h"
 
-#include "rlog/rlog.h"
 #include <rlog/Error.h>
+#include <rlog/rlog.h>
 #include <cstring>
 
 #include "Cipher.h"
@@ -32,7 +32,6 @@
 
 using namespace rel;
 using namespace std;
-using namespace rlog;
 
 static shared_ptr<NameIO> NewStreamNameIO(const Interface &iface,
                                           const shared_ptr<Cipher> &cipher,

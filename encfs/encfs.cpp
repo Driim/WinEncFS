@@ -21,10 +21,11 @@
 #include <inttypes.h>
 #include <stdint.h>
 #include <sys/stat.h>
+/* FIXME: create empty files */
 //#include <sys/statvfs.h>
-#include "sys/time.h"
+#include <sys/time.h>
 #include <time.h>
-#include "unistd.h"
+#include <unistd.h>
 //#include <utime.h>
 #include <cerrno>
 #include <cstddef>
@@ -41,7 +42,8 @@
 #include <attr/xattr.h>
 #endif
 
-#include "rlog/rlog.h"
+#include <rlog\Error.h>
+#include <rlog/rlog.h>
 #include <functional>
 #include <string>
 #include <vector>
@@ -53,6 +55,13 @@
 #include "fuse.h"
 #include "Mutex.h"
 
+namespace rel {
+	class Lock;
+}  // namespace rel
+namespace rlog {
+	class RLogChannel;
+}  // namespace rlog
+
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -61,14 +70,13 @@
 #define ESUCCESS 0
 
 using namespace std;
-using namespace rlog;
 using namespace std::placeholders;
+using namespace rlog;
 using rel::Lock;
-
-static RLogChannel *Info = DEF_CHANNEL("info/encfs", Log_Info);
 
 #define GET_FN(ctx, finfo) ctx->getNode((void *)(uintptr_t) finfo->fh)
 
+static RLogChannel *Info = DEF_CHANNEL("info", Log_Info);
 
 static EncFS_Context *context() {
   return (EncFS_Context *)fuse_get_context()->private_data;
@@ -107,8 +115,9 @@ static int withCipherPath(const char *opName, const char *path,
       res = -eno;
     } else if (!passReturnCode)
       res = ESUCCESS;
-  } catch (std::string err) {
-    rError("withCipherPath: error caught in %s: %s", opName, err);
+  } catch (rlog::Error &err) {
+	rError("withCipherPath: error caught in %s: %s", opName, err.message());
+	err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -144,8 +153,9 @@ static int withFileNode(const char *opName, const char *path,
     res = op(fnode.get());
 
     if (res < 0) rInfo("%s error: %s", opName, strerror(-res));
-  } catch (std::string err) {
-    rError("withFileNode: error caught in %s: %s", opName, err);
+  } catch (rlog::Error &err) {
+	rError("withFileNode: error caught in %s: %s", opName, err.message());
+	err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -227,8 +237,9 @@ int encfs_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     }
 
     return res;
-  } catch (...) {
+  } catch (rlog::Error &err) {
     rError("Error caught in getdir");
+	err.log(_RLWarningChannel);
     return -EIO;
   }
 }
@@ -267,8 +278,9 @@ int encfs_mknod(const char *path, mode_t mode, dev_t rdev) {
       if (dnode->getAttr(&st) == 0)
         res = fnode->mknod(mode, rdev, uid, st.st_gid);
     }
-  } catch (...) {
+  } catch (rlog::Error &err) {
     rError("error caught in mknod");
+	err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -301,8 +313,9 @@ int encfs_mkdir(const char *path, mode_t mode) {
       if (dnode->getAttr(&st) == 0)
         res = FSRoot->mkdir(path, mode, uid, st.st_gid);
     }
-  } catch (...) {
+  } catch (rlog::Error &err) {
     rError("error caught in mkdir");
+	err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -320,8 +333,9 @@ int encfs_unlink(const char *path) {
     // let DirNode handle it atomically so that it can handle race
     // conditions
     res = FSRoot->unlink(path);
-  } catch (...) {
+  } catch (rlog::Error &err) {
     rError("error caught in unlink");
+	err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -429,8 +443,9 @@ int encfs_link(const char *from, const char *to) {
 
   try {
     res = FSRoot->link(from, to);
-  } catch (...) {
+  } catch (rlog::Error &err) {
     rError("error caught in link");
+	err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -446,8 +461,9 @@ int encfs_rename(const char *from, const char *to) {
 
   try {
     res = FSRoot->rename(from, to);
-  } catch (...) {
+  } catch (rlog::Error &err) {
     rError("error caught in rename");
+	err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -565,8 +581,9 @@ int encfs_open(const char *path, struct fuse_file_info *file) {
         res = ESUCCESS;
       }
     }
-  } catch (...) {
+  } catch (rlog::Error &err) {
     rError("error caught in open");
+	err.log(_RLWarningChannel);
   }
 
   return res;
@@ -580,7 +597,7 @@ int _do_flush(FileNode *fnode) {
   int res = fnode->open(O_RDONLY);
   if (res >= 0) {
     int fh = res;
-    res = close(_dup(fh));
+	res = close(_dup(fh)); /* FIXME: win & linux defines */
     if (res == -1) res = -errno;
   }
 
@@ -603,8 +620,9 @@ int encfs_release(const char *path, struct fuse_file_info *finfo) {
   try {
     ctx->eraseNode(path, (void *)(uintptr_t) finfo->fh);
     return ESUCCESS;
-  } catch (...) {
+  } catch (rlog::Error &err) {
     rError("error caught in release");
+	err.log(_RLWarningChannel);
     return -EIO;
   }
 }
@@ -613,7 +631,7 @@ int _do_read(FileNode *fnode, unsigned char *ptr, size_t size, off_t off) {
   return fnode->read(off, ptr, size);
 }
 
-int encfs_read(const char *path, char *buf, size_t size, long long offset,
+int encfs_read(const char *path, char *buf, size_t size, __int64 offset,
                struct fuse_file_info *file) {
   return withFileNode("read", path, file,
                       bind(_do_read, _1, (unsigned char *)buf, size, offset));
@@ -659,8 +677,9 @@ int encfs_statfs(const char *path, struct statvfs *st) {
       st->f_namemax = 6 * (st->f_namemax - 2) / 8;  // approx..
     }
     if (res == -1) res = -errno;
-  } catch (...) {
+  } catch (rlog::Error &err) {
     rError("error caught in statfs");
+	err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -753,7 +772,7 @@ int encfs_removexattr(const char *path, const char *name) {
 
 #endif  // HAVE_XATTR
 
-#ifdef WIN32
+#ifdef WIN32 /* TODO: move */
 
 static uint32_t encfs_win_get_attributes(const char *fn)
 {

@@ -21,8 +21,8 @@
 #include "MACFileIO.h"
 
 #include <inttypes.h>
-#include "rlog/rlog.h"
-#include "rlog/Error.h"
+#include <rlog/rlog.h>
+#include <rlog/Error.h>
 #include <sys/stat.h>
 #include <cstring>
 
@@ -33,9 +33,13 @@
 #include "MemoryPool.h"
 #include "i18n.h"
 
+namespace rlog {
+	class RLogChannel;
+}
+
+using namespace rlog;
 using namespace rel;
 using namespace std;
-using namespace rlog;
 
 static RLogChannel *Info = DEF_CHANNEL("info/MacFileIO", Log_Info);
 

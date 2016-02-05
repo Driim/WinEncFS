@@ -21,8 +21,8 @@
 #ifndef _encfs_incl_
 #define _encfs_incl_
 
-#include "fuse.h"
-#include "rlog/rlog.h"
+#include <fuse.h>
+#include <rlog/rlog.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -80,7 +80,7 @@ int encfs_ftruncate(const char *path, long long size, struct fuse_file_info *fi)
 int encfs_utime(const char *path, struct utimbuf *buf);
 int encfs_open(const char *path, struct fuse_file_info *info);
 int encfs_release(const char *path, struct fuse_file_info *info);
-int encfs_read(const char *path, char *buf, size_t size, long long offset,
+int encfs_read(const char *path, char *buf, size_t size, __int64 offset, /* TODO: long long(__int64) and off_t  */
                struct fuse_file_info *info);
 int encfs_write(const char *path, const char *buf, size_t size, long long offset,
                 struct fuse_file_info *info);

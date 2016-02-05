@@ -21,7 +21,7 @@
 #include "MemoryPool.h"
 
 #include <openssl/ossl_typ.h>
-#include "pthread.h"
+#include <pthread.h>
 #include <cstring>
 
 #ifdef HAVE_VALGRIND_MEMCHECK_H

@@ -21,9 +21,9 @@
 #ifndef _DirNode_incl_
 #define _DirNode_incl_
 
-#include "dirent.h"
+#include <dirent.h>
 #include <inttypes.h>
-#include "pthread.h"
+#include <pthread.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <list>

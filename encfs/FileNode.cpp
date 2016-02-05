@@ -23,12 +23,12 @@
 #include <inttypes.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "unistd.h"
+#include <unistd.h>
 #ifdef linux
 #include <sys/fsuid.h>
 #endif
 
-#include "rlog/rlog.h"
+#include <rlog/rlog.h>
 #include <cstring>
 
 #include "CipherFileIO.h"
@@ -39,12 +39,13 @@
 #include "Mutex.h"
 #include "RawFileIO.h"
 
+namespace rlog {
+	class RLogChannel;
+}  // namespace rlog
 
 using namespace std;
 using namespace rel;
 using namespace rlog;
-
-static RLogChannel *Info = DEF_CHANNEL("info/FileNode", Log_Info);
 
 /*
    TODO: locking at the FileNode level is inefficient, since this precludes
@@ -55,6 +56,7 @@ static RLogChannel *Info = DEF_CHANNEL("info/FileNode", Log_Info);
    sent to the IO subsystem!
 */
 
+static RLogChannel *Info = DEF_CHANNEL("info/FileNode", Log_Info);
 
 FileNode::FileNode(DirNode *parent_, const FSConfigPtr &cfg,
                    const char *plaintextName_, const char *cipherName_) {

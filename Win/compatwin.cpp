@@ -227,6 +227,11 @@ std::string wchar_to_utf8_cstr(const wchar_t *str)
 	return res;
 }
 
+DWORD pthread_self(void) 
+{
+	return GetCurrentThreadId();
+}
+
 void pthread_mutex_init(pthread_mutex_t *mtx, int )
 {
 	InitializeCriticalSection(mtx);

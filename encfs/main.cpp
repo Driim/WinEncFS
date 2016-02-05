@@ -16,14 +16,17 @@
  *
  */
 
-#include "getopt.h"
-#include "pthread.h"
-#include "rlog/rlog.h"
+#include <getopt.h>
+#include <pthread.h>
+#include <rlog/RLogChannel.h>
+#include <rlog/StdioNode.h>
+//#include <rlog/SyslogNode.h>
+#include <rlog/rlog.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include "sys/time.h"
+#include <sys/time.h>
 #include <time.h>
-#include "unistd.h"
+#include <unistd.h>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
@@ -57,6 +60,7 @@ class DirNode;
 #define LONG_OPT_REQUIRE_MAC 515
 
 using namespace std;
+using namespace rlog;
 using namespace rel;
 using gnu::autosprintf;
 
@@ -524,8 +528,9 @@ void encfs_destroy(void *_ctx) {
 void init_mpool_mutex();
 
 int main(int argc, char *argv[]) {
-    SetConsoleCP(65001); // set utf-8
-    init_mpool_mutex();
+  SetConsoleCP(65001); // set utf-8
+  init_mpool_mutex();
+  RLogInit(argc, argv);
 
 #if defined(ENABLE_NLS) && defined(LOCALEDIR)
   setlocale(LC_ALL, "");
@@ -533,6 +538,11 @@ int main(int argc, char *argv[]) {
   textdomain(PACKAGE);
 #endif
 
+  std::unique_ptr<StdioNode> slog(new StdioNode(STDERR_FILENO));
+
+  // show error and warning output
+  slog->subscribeTo(GetGlobalChannel("error"));
+  slog->subscribeTo(GetGlobalChannel("warning"));
 
   // anything that comes from the user should be considered tainted until
   // we've processed it and only allowed through what we support.
@@ -547,6 +557,8 @@ int main(int argc, char *argv[]) {
 
   if (encfsArgs->isVerbose) {
     // subscribe to more logging channels..
+	slog->subscribeTo(GetGlobalChannel("info"));
+	slog->subscribeTo(GetGlobalChannel("debug"));
   }
 
   rDebug("Root directory: %s", encfsArgs->opts->rootDir.c_str());
@@ -634,13 +646,13 @@ int main(int argc, char *argv[]) {
 
     // reset umask now, since we don't want it to interfere with the
     // pass-thru calls..
-    _umask(0);
+	_umask(0); /* TODO: win & linux defines */
 
     if (encfsArgs->isDaemon) {
 
       // keep around a pointer just in case we end up needing it to
       // report a fatal condition later (fuse_main exits unexpectedly)...
-      oldStderr = _dup(STDERR_FILENO);
+	  oldStderr = _dup(STDERR_FILENO); /* TODO: win & linux defines */
     }
 
     try {
@@ -668,7 +680,7 @@ int main(int argc, char *argv[]) {
           (endTime - startTime <= 1)) {
         // the users will not have seen any message from fuse, so say a
         // few words in libfuse's memory..
-        FILE *out = _fdopen(oldStderr, "a");
+        FILE *out = _fdopen(oldStderr, "a"); /* TODO: win & linux defines */
         // xgroup(usage)
         fputs(_("fuse failed.  Common problems:\n"
                 " - fuse kernel module not installed (modprobe fuse)\n"

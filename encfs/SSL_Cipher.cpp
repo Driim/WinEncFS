@@ -24,11 +24,11 @@
 #include <openssl/hmac.h>
 #include <openssl/ossl_typ.h>
 #include <openssl/rand.h>
-#include "pthread.h"
-#include "rlog/rlog.h"
-#include "rlog/Error.h"
+#include <pthread.h>
+#include <rlog/rlog.h>
+#include <rlog/Error.h>
 //#include <sys/mman.h>
-#include "sys/time.h"
+#include <sys/time.h>
 #include <cstring>
 #include <string>
 
@@ -39,12 +39,13 @@
 #include "SSL_Cipher.h"
 #include "intl/gettext.h"
 
+namespace rlog {
+	class RLogChannel;
+}  // namespace rlog
 
 using namespace std;
 using namespace rel;
 using namespace rlog;
-
-static RLogChannel *CipherInfo = DEF_CHANNEL("info/Cipher", Log_Info);
 
 const int MAX_KEYLENGTH = 32;  // in bytes (256 bit)
 const int MAX_IVLENGTH = 16;   // 128 bit (AES block size, Blowfish has 64)
@@ -315,6 +316,7 @@ void initKey(const shared_ptr<SSLKey> &key, const EVP_CIPHER *_blockCipher,
   HMAC_Init_ex(&key->mac_ctx, KeyData(key), _keySize, EVP_sha1(), 0);
 }
 
+static RLogChannel *CipherInfo = DEF_CHANNEL("info/cipher", Log_Info);
 
 SSL_Cipher::SSL_Cipher(const rel::Interface &iface_, const rel::Interface &realIface_,
                        const EVP_CIPHER *blockCipher,
@@ -798,7 +800,7 @@ bool SSL_Cipher::blockEncode(unsigned char *buf, int size, uint64_t iv64,
   // data must be integer number of blocks
   const int blockMod = size % EVP_CIPHER_CTX_block_size(&key->block_enc);
   if (blockMod != 0)
-	  throw RLOG_ERROR("Invalid data size, not multiple of block size");
+	throw RLOG_ERROR("Invalid data size, not multiple of block size");
 
   Lock lock(key->mutex);
 
@@ -830,7 +832,7 @@ bool SSL_Cipher::blockDecode(unsigned char *buf, int size, uint64_t iv64,
   // data must be integer number of blocks
   const int blockMod = size % EVP_CIPHER_CTX_block_size(&key->block_dec);
   if (blockMod != 0)
-	  throw RLOG_ERROR("Invalid data size, not multiple of block size");
+	throw RLOG_ERROR("Invalid data size, not multiple of block size");
 
   Lock lock(key->mutex);
 

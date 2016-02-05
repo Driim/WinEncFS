@@ -23,6 +23,8 @@ void pthread_mutex_unlock(pthread_mutex_t *mtx);
 
 int pthread_create(pthread_t *thread, int, void *(*start_routine)(void*), void *arg);
 void pthread_join(pthread_t thread, int);
+DWORD pthread_self(void);
+
 
 int my_open(const char *fn, int flags);
 
