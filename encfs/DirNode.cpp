@@ -43,7 +43,7 @@
 #include "Mutex.h"
 
 namespace rlog {
-  class RLogChannel;
+class RLogChannel;
 }  // namespace rlog
 
 using namespace std;
@@ -186,8 +186,8 @@ bool RenameOp::apply() {
       rDebug("renaming %s -> %s", last->oldCName.c_str(),
              last->newCName.c_str());
 
-	  stat_st st;
-	  bool preserve_mtime = unix::stat(last->oldCName.c_str(), &st) == 0;
+      stat_st st;
+      bool preserve_mtime = unix::stat(last->oldCName.c_str(), &st) == 0;
 
       // internal node rename..
       dn->renameNode(last->oldPName.c_str(), last->newPName.c_str());
@@ -202,8 +202,8 @@ bool RenameOp::apply() {
 
       if (preserve_mtime) {
         struct utimbuf ut;
-		ut.actime = st.st_atim.tv_sec;
-		ut.modtime = st.st_mtim.tv_sec;
+        ut.actime = st.st_atim.tv_sec;
+        ut.modtime = st.st_mtim.tv_sec;
         unix::utime(last->newCName.c_str(), &ut);
       }
 
@@ -240,7 +240,7 @@ void RenameOp::undo() {
     try {
       dn->renameNode(it->newPName.c_str(), it->oldPName.c_str(), false);
     } catch (rlog::Error &err) {
-    err.log(_RLWarningChannel);
+      err.log(_RLWarningChannel);
       // continue on anyway...
     }
     ++undoCount;
@@ -473,7 +473,7 @@ bool DirNode::genRenameList(list<RenameEl> &renameList, const char *fromP,
       // it (or perhaps a valid key).. It will be inaccessible..
       rWarning("Aborting rename: error on file: %s",
                fromCPart.append(1, '/').append(de->d_name).c_str());
-	  err.log(_RLDebugChannel);
+      err.log(_RLDebugChannel);
 
       // abort.. Err on the side of safety and disallow rename, rather
       // then loosing files..

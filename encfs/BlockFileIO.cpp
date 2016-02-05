@@ -150,7 +150,7 @@ ssize_t BlockFileIO::read(const IORequest &req) const {
       }
 
       ssize_t readSize = cacheReadOneBlock(blockReq);
-	  if (unlikely(readSize <= partialOffset))
+      if (unlikely(readSize <= partialOffset))
         break;  // didn't get enough bytes
 
       int cpySize = min((size_t)(readSize - partialOffset), size);
@@ -166,7 +166,7 @@ ssize_t BlockFileIO::read(const IORequest &req) const {
       ++blockNum;
       partialOffset = 0;
 
-	  if (unlikely(readSize < _blockSize)) break;
+      if (unlikely(readSize < _blockSize)) break;
     }
 
     if (mb.data) MemoryPool::release(mb);

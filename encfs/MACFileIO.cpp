@@ -34,7 +34,7 @@
 #include "i18n.h"
 
 namespace rlog {
-  class RLogChannel;
+class RLogChannel;
 }  // namespace rlog
 
 using namespace rlog;

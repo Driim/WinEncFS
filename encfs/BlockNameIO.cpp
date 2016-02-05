@@ -32,7 +32,7 @@
 
 namespace rlog {
   class RLogChannel;
-}
+}  // namespace rlog
 
 using namespace rlog;
 using namespace rel;

@@ -25,7 +25,7 @@
 #include "ConfigVar.h"
 
 namespace rlog {
-  class RLogChannel;
+class RLogChannel;
 }  // namespace rlog
 
 using namespace rel;

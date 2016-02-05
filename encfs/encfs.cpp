@@ -56,10 +56,10 @@
 #include "Mutex.h"
 
 namespace rel {
-  class Lock;
+class Lock;
 }  // namespace rel
 namespace rlog {
-  class RLogChannel;
+class RLogChannel;
 }  // namespace rlog
 
 #ifndef MIN
@@ -596,7 +596,7 @@ int _do_flush(FileNode *fnode) {
   int res = fnode->open(O_RDONLY);
   if (res >= 0) {
     int fh = res;
-	res = close(_dup(fh)); /* FIXME: win & linux defines */
+    res = close(_dup(fh)); /* FIXME: win & linux defines */
     if (res == -1) res = -errno;
   }
 

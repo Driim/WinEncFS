@@ -164,8 +164,8 @@ std::string NameIO::recodePath(const char *path,
       }
 
       // figure out buffer sizes
-	  int approxLen = (this->*_length)(len); 
-	  if (approxLen <= 0) throw RLOG_ERROR("Filename too small to decode");
+      int approxLen = (this->*_length)(len); 
+      if (approxLen <= 0) throw RLOG_ERROR("Filename too small to decode");
 
       BUFFER_INIT(codeBuf, 32, (unsigned int)approxLen + 1)
 
