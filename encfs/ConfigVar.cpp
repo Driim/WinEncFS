@@ -25,7 +25,6 @@
 
 using namespace rlog;
 
-
 #ifndef MIN
 inline int MIN(int a, int b) { return (a < b) ? a : b; }
 #endif

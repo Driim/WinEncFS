@@ -557,8 +557,8 @@ int main(int argc, char *argv[]) {
 
   if (encfsArgs->isVerbose) {
     // subscribe to more logging channels..
-	slog->subscribeTo(GetGlobalChannel("info"));
-	slog->subscribeTo(GetGlobalChannel("debug"));
+    slog->subscribeTo(GetGlobalChannel("info"));
+    slog->subscribeTo(GetGlobalChannel("debug"));
   }
 
   rDebug("Root directory: %s", encfsArgs->opts->rootDir.c_str());
@@ -646,7 +646,7 @@ int main(int argc, char *argv[]) {
 
     // reset umask now, since we don't want it to interfere with the
     // pass-thru calls..
-	_umask(0); /* TODO: win & linux defines */
+    _umask(0); /* TODO: win & linux defines */
 
     if (encfsArgs->isDaemon) {
 

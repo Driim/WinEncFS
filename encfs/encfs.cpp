@@ -42,7 +42,7 @@
 #include <attr/xattr.h>
 #endif
 
-#include <rlog\Error.h>
+#include <rlog/Error.h>
 #include <rlog/rlog.h>
 #include <functional>
 #include <string>
@@ -56,12 +56,11 @@
 #include "Mutex.h"
 
 namespace rel {
-	class Lock;
+  class Lock;
 }  // namespace rel
 namespace rlog {
-	class RLogChannel;
+  class RLogChannel;
 }  // namespace rlog
-
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -116,8 +115,8 @@ static int withCipherPath(const char *opName, const char *path,
     } else if (!passReturnCode)
       res = ESUCCESS;
   } catch (rlog::Error &err) {
-	rError("withCipherPath: error caught in %s: %s", opName, err.message());
-	err.log(_RLWarningChannel);
+    rError("withCipherPath: error caught in %s: %s", opName, err.message());
+    err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -154,8 +153,8 @@ static int withFileNode(const char *opName, const char *path,
 
     if (res < 0) rInfo("%s error: %s", opName, strerror(-res));
   } catch (rlog::Error &err) {
-	rError("withFileNode: error caught in %s: %s", opName, err.message());
-	err.log(_RLWarningChannel);
+    rError("withFileNode: error caught in %s: %s", opName, err.message());
+    err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -239,7 +238,7 @@ int encfs_getdir(const char *path, fuse_dirh_t h, fuse_dirfil_t filler) {
     return res;
   } catch (rlog::Error &err) {
     rError("Error caught in getdir");
-	err.log(_RLWarningChannel);
+    err.log(_RLWarningChannel);
     return -EIO;
   }
 }
@@ -280,7 +279,7 @@ int encfs_mknod(const char *path, mode_t mode, dev_t rdev) {
     }
   } catch (rlog::Error &err) {
     rError("error caught in mknod");
-	err.log(_RLWarningChannel);
+    err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -315,7 +314,7 @@ int encfs_mkdir(const char *path, mode_t mode) {
     }
   } catch (rlog::Error &err) {
     rError("error caught in mkdir");
-	err.log(_RLWarningChannel);
+    err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -335,7 +334,7 @@ int encfs_unlink(const char *path) {
     res = FSRoot->unlink(path);
   } catch (rlog::Error &err) {
     rError("error caught in unlink");
-	err.log(_RLWarningChannel);
+    err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -445,7 +444,7 @@ int encfs_link(const char *from, const char *to) {
     res = FSRoot->link(from, to);
   } catch (rlog::Error &err) {
     rError("error caught in link");
-	err.log(_RLWarningChannel);
+    err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -463,7 +462,7 @@ int encfs_rename(const char *from, const char *to) {
     res = FSRoot->rename(from, to);
   } catch (rlog::Error &err) {
     rError("error caught in rename");
-	err.log(_RLWarningChannel);
+    err.log(_RLWarningChannel);
   }
   return res;
 }
@@ -583,7 +582,7 @@ int encfs_open(const char *path, struct fuse_file_info *file) {
     }
   } catch (rlog::Error &err) {
     rError("error caught in open");
-	err.log(_RLWarningChannel);
+    err.log(_RLWarningChannel);
   }
 
   return res;
@@ -622,7 +621,7 @@ int encfs_release(const char *path, struct fuse_file_info *finfo) {
     return ESUCCESS;
   } catch (rlog::Error &err) {
     rError("error caught in release");
-	err.log(_RLWarningChannel);
+    err.log(_RLWarningChannel);
     return -EIO;
   }
 }
@@ -679,7 +678,7 @@ int encfs_statfs(const char *path, struct statvfs *st) {
     if (res == -1) res = -errno;
   } catch (rlog::Error &err) {
     rError("error caught in statfs");
-	err.log(_RLWarningChannel);
+    err.log(_RLWarningChannel);
   }
   return res;
 }

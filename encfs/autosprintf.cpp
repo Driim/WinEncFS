@@ -48,7 +48,7 @@ autosprintf::autosprintf(const char *format, ...) {
 
 /* Copy constructor.  Necessary because the destructor is nontrivial.  */
 autosprintf::autosprintf(const autosprintf &src) {
-  str = (src.str != NULL ? _strdup(src.str) : NULL);
+  str = (src.str != NULL ? _strdup(src.str) : NULL); /* TODO: win & linux defines */
 }
 
 /* Destructor: frees the temporarily allocated string.  */

@@ -346,7 +346,7 @@ ConfigType readConfig_load(ConfigInfo *nm, const char *path,
         return nm->type;
       }
     } catch (rlog::Error &err) {
-	  err.log(_RLWarningChannel);
+      err.log(_RLWarningChannel);
     }
 
     rError(_("Found config file %s, but failed to load - exiting"), path);
@@ -456,8 +456,8 @@ bool readV5Config(const char *configFile, const shared_ptr<EncFSConfig> &config,
       config->blockMACRandBytes = cfgRdr["blockMACRandBytes"].readInt(0);
 
       ok = true;
-	} catch (rlog::Error &err) {
-	  err.log(_RLWarningChannel);
+    } catch (rlog::Error &err) {
+      err.log(_RLWarningChannel);
       rDebug("Error parsing data in config file %s", configFile);
       ok = false;
     }
@@ -496,8 +496,8 @@ bool readV4Config(const char *configFile, const shared_ptr<EncFSConfig> &config,
       config->chainedNameIV = false;
 
       ok = true;
-    }
-    catch (...) {
+    } catch (rlog::Error &err) {
+      err.log(_RLWarningChannel);
       rDebug("Error parsing config file %s", configFile);
       ok = false;
     }
@@ -523,7 +523,7 @@ bool saveConfig(ConfigType type, const string &rootDir,
       try {
         ok = (*nm->saveFunc)(path.c_str(), config);
       } catch (rlog::Error &err) {
-		err.log(_RLWarningChannel);
+        err.log(_RLWarningChannel);
         ok = false;
       }
       break;

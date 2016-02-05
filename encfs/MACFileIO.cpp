@@ -21,8 +21,8 @@
 #include "MACFileIO.h"
 
 #include <inttypes.h>
-#include <rlog/rlog.h>
 #include <rlog/Error.h>
+#include <rlog/rlog.h>
 #include <sys/stat.h>
 #include <cstring>
 
@@ -34,15 +34,14 @@
 #include "i18n.h"
 
 namespace rlog {
-	class RLogChannel;
-}
+  class RLogChannel;
+}  // namespace rlog
 
 using namespace rlog;
 using namespace rel;
 using namespace std;
 
 static RLogChannel *Info = DEF_CHANNEL("info/MacFileIO", Log_Info);
-
 //
 // Version 1.0 worked on blocks of size (blockSize + headerSize).
 //   That is, it took [blockSize] worth of user data and added headers.

@@ -23,8 +23,8 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <openssl/sha.h>
-#include <rlog/rlog.h>
 #include <rlog/Error.h>
+#include <rlog/rlog.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <cerrno>
@@ -40,9 +40,7 @@
       filesystem at the filesystem configuration level.
       When headers are disabled, 2:0 is compatible with version 1:0.
 */
-using namespace rlog;
 static rel::Interface CipherFileIO_iface("FileIO/Cipher", 2, 0, 1);
-
 
 const int HEADER_SIZE = 8;  // 64 bit initialization vector..
 

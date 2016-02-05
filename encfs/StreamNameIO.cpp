@@ -172,7 +172,7 @@ int StreamNameIO::decodeName(const char *encodedName, int length, uint64_t *iv,
   if (mac2 != mac) {
     rDebug("checksum mismatch: expected %u, got %u", mac, mac2);
     rDebug("on decode of %i bytes", decodedStreamLen);
-	throw RLOG_ERROR("checksum mismatch in filename decode");
+    throw RLOG_ERROR("checksum mismatch in filename decode");
   }
 
   return decodedStreamLen;

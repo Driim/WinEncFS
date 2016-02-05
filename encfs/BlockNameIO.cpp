@@ -20,8 +20,8 @@
 
 #include "BlockNameIO.h"
 
-#include <rlog/rlog.h>
 #include <rlog/Error.h>
+#include <rlog/rlog.h>
 #include <cstring>
 
 #include "Cipher.h"
@@ -31,7 +31,7 @@
 #include "intl/gettext.h"
 
 namespace rlog {
-	class RLogChannel;
+  class RLogChannel;
 }
 
 using namespace rlog;
