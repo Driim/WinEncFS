@@ -24,8 +24,8 @@
 #include "fuse.h"
 #include "rlog/rlog.h"
 #include <sys/types.h>
-#include "unistd.h"
-#include "pthread.h"
+#include <unistd.h>
+#include <pthread.h>
 
 #include "config.h"
 
