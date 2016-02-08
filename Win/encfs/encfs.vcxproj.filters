@@ -200,13 +200,7 @@
     <ClCompile Include="..\compatwin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\getopt1.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\gettimeofday.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\getopt.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
