@@ -1,4 +1,4 @@
-# encfs4win - Windows port of EncFS 
+# WinEncFS - Windows port of EncFS 
 
 ## About
 
@@ -21,14 +21,8 @@ For more info, see:
  - The excellent [encfs manpage](encfs/encfs.pod)
  - The technical overview in [DESIGN.md](DESIGN.md)
 
-## Status
-
-I will try to keep this updated with the [EncFS project](https://github.com/vgough/encfs) 
-as changes come in upstream.  
-
-EncFS4win has been tested with the latest release of Dokan (v0.7.4), but has not yet been tested 
-with the release candidates (v0.8.x).  
 
 ## Credits
 
-Special thanks to [vgough/encfs](https://github.com/vgough/encfs) and [freddy77/encfs4win](https://github.com/freddy77/encfs4win) for establishing the groundwork that made this project possible! 
+Special thanks to [vgough/encfs](https://github.com/vgough/encfs),[freddy77/encfs4win](https://github.com/freddy77/encfs4win) and [jetwhiz/encfs4win](https://github.com/jetwhiz/encfs4win)
+for establishing the groundwork that made this project possible! 
